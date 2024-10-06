@@ -1,0 +1,65 @@
+#include "BluetoothSerial.h"
+int state;
+int val;
+#if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
+#error Bluetooth is not enabled! Please run make menuconfig to and enable it
+
+const int analogInPin = 36; 
+
+int sensorValue = 0;        // value read from the pot
+
+#include <OneWire.h>
+#include <DallasTemperature.h>
+
+// GPIO where the DS18B20 is connected to
+const int oneWireBus = 2;     
+
+// Setup a oneWire instance to communicate with any OneWire devices
+OneWire oneWire(oneWireBus);
+
+// Pass our oneWire reference to Dallas Temperature sensor 
+DallasTemperature sensors(&oneWire);
+
+void setup() {
+  Serial.begin(115200);
+  SerialBT.begin("AQUACULTURE");
+    sensors.begin();
+}
+
+void loop() {
+         if(SerialBT.available())
+  { 
+    state = SerialBT.read();
+    }
+  sensors.requestTemperatures();
+  float temperature = sensors.getTempCByIndex(0); 
+ 
+  // read the analog in value:
+  int tds = analogRead(analogInPin);
+ 
+  SerialBT.print("TDS PPM = ");
+  SerialBT.println(tds /4.1);
+  SerialBT.print("Temperature:");
+  SerialBT.print(temperature);
+  SerialBT.println("ºC");
+    Serial.print("Temperature:");
+  Serial.print(temperature);
+  Serial.println("ºC");
+   sensorValue = analogRead(35 );
+  // print the results to the Serial Monitor:
+  Serial.print("sensor = ");
+  Serial.println(sensorValue);
+if (sensorValue > 1800 && sensorValue < 2200 ){
+  SerialBT.println("WATER QUALITY IS GOOD");
+  Serial.println("WATER QUALITY IS GOOD");
+}
+if (sensorValue < 1750 && sensorValue > 1000  ){
+  SerialBT.println("WATER QUALITY IS DIRTY");
+  Serial.println("WATER QUALITY IS DIRTY");
+}
+if (sensorValue < 1000 ){
+  SerialBT.println("WATER QUALITY IS BAD");
+  Serial .println("WATER QUALITY IS BAD");
+}
+  delay(500);
+}
